@@ -1,5 +1,7 @@
 # Currency Converter
 
+![currency-converter](https://github.com/user-attachments/assets/4dd85506-69fa-48e8-aa2e-92f195e5d676)
+
 A simple currency converter application that runs in the console.
 
 ## Prerequisites
