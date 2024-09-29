@@ -3,7 +3,9 @@ package org.example.currencyconverter.client;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.example.currencyconverter.model.Currency;
 import org.example.currencyconverter.record.ExchangeRateRecord;
+import org.example.currencyconverter.service.ConfigService;
 
 import java.io.IOException;
 import java.net.URI;
@@ -11,21 +13,27 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.Currency;
 
 public class ExchangeRateClient {
-    private String baseUrl;
-    private String apiToken;
+    private static ExchangeRateClient INSTANCE;
+    private final String baseUrl;
+    private final String apiToken;
 
-
-    public ExchangeRateClient(String baseUrl, String apiToken) {
-        this.baseUrl = baseUrl;
-        this.apiToken = apiToken;
+    private ExchangeRateClient() {
+        ConfigService config = ConfigService.getInstance();
+        this.apiToken = config.getProperty("exchange-rate-api.token");
+        this.baseUrl = config.getProperty("exchange-rate-api.base-url");
     }
 
-    public ExchangeRateRecord getExchangeRate(Currency fromCurrency, Currency toCurrency) {
+    public static ExchangeRateClient getInstance(){
+        if(INSTANCE == null) INSTANCE = new ExchangeRateClient();
+
+        return INSTANCE;
+    }
+
+    public ExchangeRateRecord getExchangeRate(Currency currency) throws RuntimeException {
         try {
-            String requestUrl = baseUrl + apiToken + "/latest/" + fromCurrency;
+            String requestUrl = baseUrl + apiToken + "/latest/" + currency;
 
             HttpResponse<String> response;
             try (HttpClient client = HttpClient.newHttpClient()) {
@@ -42,20 +50,11 @@ public class ExchangeRateClient {
                     .setPrettyPrinting()
                     .create();
 
-            ExchangeRateRecord record = gson.fromJson(response.body(), ExchangeRateRecord.class);
-
-            System.out.println(response.body());
-
-            System.out.println("***************************");
-
-
-            System.out.println(record.toString());
+            return gson.fromJson(response.body(), ExchangeRateRecord.class);
 
         } catch (IOException | InterruptedException e) {
             System.out.println("An error occurred while retrieving exchange rate");
-            System.out.println(e.getMessage());
+            throw new RuntimeException(e);
         }
-
-        return null;
     }
 }
